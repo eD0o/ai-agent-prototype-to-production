@@ -1,6 +1,6 @@
 # Prototype to Production: Advanced AI Apps
 
-- Watch the workshop on [Frontend Masters](https://frontendmasters.com/workshops/advanced-ai-apps/). 
+- Watch the workshop on [Frontend Masters](https://frontendmasters.com/workshops/advanced-ai-apps/).
 - View the [course notes](https://clumsy-humor-894.notion.site/Agents-in-Production-13754fed51a380da8ca0de6a2361a3a3)
 
 ## Setup Instructions
@@ -28,6 +28,6 @@ bun run index.ts
 
 Create an [API Key from OpenAI](https://platform.openai.com/settings/organization/api-keys) and save it in a `.env` file:
 
-```
+```js
 OPENAI_API_KEY='YOUR_API_KEY'
 ```
