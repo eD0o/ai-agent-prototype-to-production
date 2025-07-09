@@ -178,3 +178,114 @@ Key principles:
 5. Iterate until threshold quality is met
 6. Gradually roll out to wider users
 7. Repeat!
+
+## 2.3 - 🛠️ Setting Up an Eval Framework
+
+With "Scorer" from autoevals built in TypeScript, `it's possible to teach the evaluation structure rather than deep scientific metrics`. The example uses a custom deterministic scorer (not LLM-based) to verify tool call accuracy.
+
+### 🧪 Eval Framework Components
+
+1. Experiment:
+
+   - A named evaluation run to track progress over time (e.g. "generate-image").
+   - Helps compare performance across iterations.
+
+2. Task:
+
+   - An async function that executes the LLM or agent to produce output.
+   - Could be any kind of async behavior, not just AI.
+
+3. Dataset:
+
+   - An array of input and expected pairs.
+   - Can come from:
+
+     - Synthetic generation
+     - User logs
+     - Manual curation
+
+4. Scorers:
+
+   - One or more metrics that evaluate outputs.
+   - Can be simple functions (e.g. match check) or complex LLM-based metrics.
+
+### ✅ Custom Scorer: ToolCallMatch
+
+#### 🔍 Purpose
+
+`Check if the LLM used the correct tool given the input`.
+
+- If match → score = 1
+- If mismatch → score = 0
+
+#### 💡 Notes
+
+- Focused on tool name match only.
+- Does not check for:
+
+  - Parameter accuracy
+  - Incorrect tool calls (inverse check)
+
+### 🧪 Code Example: ToolCallMatch
+
+```ts
+import type { Scorer } from "autoevals";
+
+export const ToolCallMatch: Scorer<any, {}> = async ({
+  input,
+  output,
+  expected,
+}) => {
+  const score =
+    output.role === "assistant" && // Check role
+    Array.isArray(output.toolcalls) && // toolcalls must be an array
+    output.toolcalls.length === 1 && // Must contain exactly one tool call
+    output.toolcalls[0].function?.name === expected.toolcalls[0].function?.name // Match tool name
+      ? 1
+      : 0;
+
+  return {
+    name: "ToolCallMatch",
+    score,
+  };
+};
+```
+
+### 🗃️ Storing Evaluation Data
+
+- Always store:
+
+  - Input, Output, Expected, and Scores
+
+- Used for:
+
+  - Debugging
+  - Historical comparisons
+  - Visual dashboards
+
+#### 🧰 Optional Tools
+
+- Tools like [Braintrust](https://www.braintrustdata.com/) help:
+
+  - Manage datasets
+  - Visualize failures
+  - Run evals online or offline
+  - Label data with human experts
+
+> ❗ You don’t need advanced tools until your dataset grows large or user data becomes too complex.
+
+### 🧵 When to Use LLM-Based Metrics?
+
+- LLM-based scores (like semantic similarity or entity match) introduce subjectivity.
+- Best used for:
+  - Response quality
+  - Nuanced understanding
+
+- But not ideal for beginners or simple tool-based agents.
+
+#### Tips
+
+- Focus on simple, deterministic scorers first.
+- Store all eval-related data for visibility and improvement.
+- Use named experiments to track progress.
+- Expand with LLM-based scorers or external platforms as your system matures.
