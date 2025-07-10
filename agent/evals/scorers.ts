@@ -6,11 +6,11 @@ export const ToolCallMatch: Scorer<any, {}> = async ({
   expected,
 }) => {
   const score =
-    output.role === 'assistant' && // Check if the output has tool calls
-      Array.isArray(output.tool_calls) && // Ensure tool_calls is an array
-      output.tool_calls.length === 1 && // Check if there is exactly one tool call
-      output.tool_calls[0].function?.name ===
-      expected.tool_calls[0].function?.name // Check if the tool call matches the expected one
+    output.role === 'assistant' &&
+    Array.isArray(output.tool_calls) &&
+    output.tool_calls.length === 1 &&
+    output.tool_calls[0].function?.name ===
+      expected.tool_calls[0].function?.name
       ? 1
       : 0
 

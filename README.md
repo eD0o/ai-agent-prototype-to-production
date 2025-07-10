@@ -1,5 +1,7 @@
 # 2 - Evals
 
+> If you're running on Windows, you need to install dotenv-cli: `npm install -D dotenv-cli`, then, to run the project: `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts`
+
 ## 2.1 - Improving LLMs with Evals
 
 ### 🧪 What Are Evals?
@@ -278,6 +280,7 @@ export const ToolCallMatch: Scorer<any, {}> = async ({
 
 - LLM-based scores (like semantic similarity or entity match) introduce subjectivity.
 - Best used for:
+
   - Response quality
   - Nuanced understanding
 
@@ -289,3 +292,11 @@ export const ToolCallMatch: Scorer<any, {}> = async ({
 - Store all eval-related data for visibility and improvement.
 - Use named experiments to track progress.
 - Expand with LLM-based scorers or external platforms as your system matures.
+
+## 2.4 - Dashboard
+
+To see the dashboard and see the results in the graph, `cd dashboard`, `npm install` and `npm run dev`.
+
+> Remember to have the results.json file (it's necessary to run `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts` in the project root).
+
+![](https://i.imgur.com/A8NfDGE.png)
