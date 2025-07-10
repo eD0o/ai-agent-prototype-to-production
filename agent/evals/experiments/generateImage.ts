@@ -1,31 +1,29 @@
-import { runLLM } from '../../src/llm'
-import { redditToolDefinition } from '../../src/tools/reddit'
 import { runEval } from '../evalTools'
+import { runLLM } from '../../src/llm'
 import { ToolCallMatch } from '../scorers'
+import { generateImageToolDefinition } from '../../src/tools/generateImage'
 
 const createToolCallMessage = (toolName: string) => ({
   role: 'assistant',
   tool_calls: [
     {
       type: 'function',
-      function: {
-        name: toolName,
-      },
+      function: { name: toolName },
     },
   ],
 })
 
-runEval('reddit', {
+runEval('generateImage', {
   task: (input) =>
     runLLM({
       messages: [{ role: 'user', content: input }],
-      tools: [redditToolDefinition],
+      tools: [generateImageToolDefinition],
     }),
   data: [
     {
-      input: 'find me something interesting on reddit',
-      expected: createToolCallMessage(redditToolDefinition.name),
-    }
+      input: 'can you generate an image of a sunset',
+      expected: createToolCallMessage(generateImageToolDefinition.name),
+    },
   ],
   scorers: [ToolCallMatch],
 })

@@ -1,6 +1,6 @@
 # 2 - Evals
 
-> If you're running on Windows, you need to install dotenv-cli: `npm install -D dotenv-cli`, then, to run the project: `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts`
+> If you're running on Windows, you need to install dotenv-cli: `npm install -D dotenv-cli`, then, if `npx tsx evals/experiments/reddit.eval.ts` still doesn't work, try to run the project using: `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts`
 
 ## 2.1 - Improving LLMs with Evals
 
@@ -231,6 +231,7 @@ With "Scorer" from autoevals built in TypeScript, `it's possible to teach the ev
 ### 🧪 Code Example: ToolCallMatch
 
 ```ts
+// scorer.ts
 import type { Scorer } from "autoevals";
 
 export const ToolCallMatch: Scorer<any, {}> = async ({
@@ -252,6 +253,47 @@ export const ToolCallMatch: Scorer<any, {}> = async ({
   };
 };
 ```
+
+```ts
+// reddit.eval.ts
+import { runLLM } from "../../src/llm";
+import { redditToolDefinition } from "../../src/tools/reddit";
+import { runEval } from "../evalTools";
+import { ToolCallMatch } from "../scorers";
+
+const createToolCallMessage = (toolName: string) => ({
+  role: "assistant",
+  tool_calls: [
+    {
+      type: "function",
+      function: {
+        name: toolName,
+      },
+    },
+  ],
+});
+
+runEval("reddit", {
+  task: (input) =>
+    runLLM({
+      messages: [{ role: "user", content: input }],
+      tools: [redditToolDefinition],
+    }),
+  data: [
+    {
+      input: "find me something interesting on reddit",
+      expected: createToolCallMessage(redditToolDefinition.name),
+    },
+    {
+      input: "hi",
+      expected: createToolCallMessage(redditToolDefinition.name),
+    },
+  ],
+  scorers: [ToolCallMatch],
+});
+```
+
+> If you're running on Windows, you need to install dotenv-cli: `npm install -D dotenv-cli`, then, if `npx tsx evals/experiments/reddit.eval.ts` still doesn't work, try to run the project using: `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts`
 
 ### 🗃️ Storing Evaluation Data
 
@@ -293,10 +335,158 @@ export const ToolCallMatch: Scorer<any, {}> = async ({
 - Use named experiments to track progress.
 - Expand with LLM-based scorers or external platforms as your system matures.
 
-## 2.4 - Dashboard
+## 2.4 - Viewing Eval Results in a dashboard
 
 To see the dashboard and see the results in the graph, `cd dashboard`, `npm install` and `npm run dev`.
 
-> Remember to have the results.json file (it's necessary to run `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts` in the project root).
+> Remember to have the results.json file (it's necessary to run `npx tsx evals/experiments/reddit.eval.ts` / `npx dotenv -e .env -- tsx evals/experiments/reddit.eval.ts` in the project root).
 
 ![](https://i.imgur.com/A8NfDGE.png)
+
+## 2.5 - Handling Evals on Subjective Inputs
+
+### 🛠️ Manual Error Testing
+
+- Deliberately sabotage tool descriptions (e.g. renaming dadJoke to weather) to:
+
+  - Test model behavior
+  - Understand tool selection weaknesses
+
+- LLMs are surprisingly resilient to small misnaming, but tool name and description heavily influence selection.
+
+### 🔁 The Improvement Loop:
+
+1. Run eval → identify failure
+2. Modify:
+
+   - Tool name
+   - Tool description
+   - System prompt
+
+3. Run again and compare results
+4. Repeat until desired behavior is consistent
+
+### 📝 Log Metadata
+
+- Log tool name, tool definition, system prompt, and score per experiment
+- Optional: track historical changes across `dadJoke.v1`, `v2`, etc.
+
+### 💡 Prompt Engineering
+
+LLMs don’t inherently “understand”, they predict what text (or action) should come next based on the inputs they receive. So, `the more clearly and intuitively your prompts and tool definitions match the user's intent, the more likely the model is to choose the correct tool`.
+
+Let’s say your tool is called generateImage and it has this original description: "Generates an image based on a text prompt."
+
+If a user says:
+"Take a photo of a sunset", the LLM might fail to call generateImage because:
+
+"Take a photo" ≠ "Generate an image" (in raw semantics)
+
+The word "photo" doesn’t appear in the tool definition
+
+Improved description: "Use this tool to generate an image or take a photo based on a description."
+
+> Small changes in wording like adding can dramatically change tool selection behavior.
+
+### 📊 Interpreting Eval Results
+
+- Eval score depends on number of inputs:
+
+  - 1 input = 0% or 100%
+  - Multiple inputs = % average (e.g. 50%)
+
+> Re-running the same eval multiple times gives a consistency check.
+
+### 💬 Real-world Lessons:
+
+- Users won’t phrase things predictably
+- Need continuous iteration + data from real usage
+- `Avoid trying to “train users” adapt LLM instead`
+
+Your notes are already clear, well-structured, and technically accurate — great job! 🙌
+Here are a few suggested improvements for clarity, flow, and polish, especially for professional or learning documentation:
+
+## 2.6 - Eval Multiple Tools
+
+- What happens when multiple tools are registered at once?
+- Goal: `Test if the LLM still chooses the correct tool based on user input`.
+
+### ⚙️ Setup:
+
+- Provide all tools simultaneously to the agent.
+- Create a dataset of inputs, one per expected tool.
+- Use the same framework and custom scorer (e.g. `ToolCallMatch`).
+
+```ts
+// experiments/allTools.ts
+
+import { runEval } from "../evalTools";
+import { runLLM } from "../../src/llm";
+import { ToolCallMatch } from "../scorers";
+import { redditToolDefinition } from "../../src/tools/reddit";
+import { generateImageToolDefinition } from "../../src/tools/generateImage";
+import { dadJokeToolDefinition } from "../../src/tools/dadJoke";
+
+const createToolCallMessage = (toolName: string) => ({
+  role: "assistant",
+  tool_calls: [
+    {
+      type: "function",
+      function: { name: toolName },
+    },
+  ],
+});
+
+const allTools = [
+  redditToolDefinition,
+  generateImageToolDefinition,
+  dadJokeToolDefinition,
+];
+
+runEval("allTools", {
+  task: (input) =>
+    runLLM({
+      messages: [{ role: "user", content: input }],
+      tools: allTools,
+    }),
+  data: [
+    {
+      input: "tell me something interesting from reddit",
+      expected: createToolCallMessage(redditToolDefinition.name),
+    },
+    {
+      input: "generate an image of a mountain landscape",
+      expected: createToolCallMessage(generateImageToolDefinition.name),
+    },
+    {
+      input: "tell me a dad joke",
+      expected: createToolCallMessage(dadJokeToolDefinition.name),
+    },
+  ],
+  scorers: [ToolCallMatch],
+});
+```
+
+#### 🔍 Insight:
+
+- Even well-named tools can fail when names or descriptions are ambiguous or too similar.
+- This helps evaluate the LLM's tool selection logic under more realistic conditions.
+
+### 🧰 AutoEvals: Built-in Scorers (Partial List)
+
+| Metric           | Description                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `battle`         | Compares the output of two systems to see which is better.                  |
+| `closedQA`       | Tests if the LLM can answer from pretraining alone.                         |
+| `factuality`     | Evaluates whether the output is factually correct.                          |
+| `moderation`     | Flags unsafe or misaligned content.                                         |
+| `SQL`            | Checks if the generated SQL is valid and executable.                        |
+| `ragas` (Python) | Metrics for evaluating RAG systems, including retrieval and answer quality. |
+
+> ⚠️ These advanced metrics are complex and require deeper understanding of retrieval pipelines, eval math, and LLM behavior.
+
+## ✅ Summary
+
+- Multi-tool evals simulate realistic production scenarios.
+- Prompt engineering (tool names, descriptions) plays a major role in LLM tool selection.
+- AutoEvals provides a growing set of metrics for varied use cases, from basic correctness to complex RAG evaluations.
