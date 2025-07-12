@@ -63,7 +63,7 @@ The RAG pipeline can be broken down into five main stages:
 ![image](https://cdn.openai.com/embeddings/draft-20220124e/vectors-1.svg)
 
 - These `vectors represent semantic meaning and enable math-based similarity search`:
-`
+  `
 
 ![image](https://images.ctfassets.net/kftzwdyauwt9/6feca3be-2b6b-4a99-fc14ed78f1ee/3373feb41e1f9f49ba2c0f1ce3332b8b/Graphofsimilarembeddings.svg?w=3840&q=90)
 
@@ -145,3 +145,17 @@ When a user makes a query:
 - 🔁 Iterate on Chunking: Consider relational and contextual chunking if naive strategies underperform.
 - ⚙️ Optimize Retrieval: Add re-ranking and filters as your system matures.
 - 🤝 Consider Hybrid Approaches: Combine RAG with tools, agents, or few-shot examples when appropriate.
+
+## 3.3 - Using Upstash as Vector Database
+
+Go to [Upstash](https://upstash.com/), create an account, and `create a new Index in the Vector database`. Then, choose any model (custom won't work), select next and choose the free tier.
+
+Once its created, `get your env vars and add them to your .env file`:
+
+```env
+
+```
+
+## 3.4 - Ingesting Data into Vector DB
+
+You can use Kaggle to ingest, it's like a github for data and there are many info for free.
